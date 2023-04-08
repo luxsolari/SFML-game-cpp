@@ -31,6 +31,24 @@ void MainMenuState::start() {
 	this->m_boundingCircle.setOrigin(this->m_boundingCircle.getRadius(), this->m_boundingCircle.getRadius());
 	this->m_boundingCircle.setPosition(this->m_shape.getPosition());
 
+	// create a rectangular shape that covers 50% of the screen, to test collision detection
+	this->m_rect = sf::RectangleShape(sf::Vector2f(WindowManager::getInstance().GetWindowSize().x / 2.f, WindowManager::getInstance().GetWindowSize().y / 2.f));
+	this->m_rect.setFillColor(sf::Color::Transparent);
+	this->m_rect.setOutlineColor(sf::Color::Red);
+	this->m_rect.setOutlineThickness(1.f);
+	this->m_rect.setOrigin(this->m_rect.getSize().x / 2.f, this->m_rect.getSize().y / 2.f);
+	this->m_rect.setPosition(this->m_shape.getPosition());
+
+	// create another one that covers 100% of the screen
+	this->m_rect_full = sf::RectangleShape(sf::Vector2f(WindowManager::getInstance().GetWindowSize().x, WindowManager::getInstance().GetWindowSize().y));
+	this->m_rect_full.setFillColor(sf::Color::Transparent);
+	this->m_rect_full.setOutlineColor(sf::Color::Red);
+	this->m_rect_full.setOutlineThickness(1.f);
+	this->m_rect_full.setOrigin(this->m_rect_full.getSize().x / 2.f, this->m_rect_full.getSize().y / 2.f);
+	this->m_rect_full.setPosition(this->m_shape.getPosition());
+
+
+
 	// load font
 	// TODO: move this to a resource manager
 	if (!this->m_font.loadFromFile("assets/fonts/arial.ttf")) {
@@ -48,6 +66,10 @@ void MainMenuState::start() {
 	// set shape origin as pivot for the text 
 	this->m_currentPositionText.setOrigin(this->m_shape.getOrigin().x + 7.5f,
 		this->m_shape.getOrigin().y - this->m_shape.getRadius() * 2.f);
+
+	// create a view that is centered on the shape and has a size of 50% of screen, to follow the shape around
+	this->m_view = sf::View(this->m_shape.getPosition(), sf::Vector2f(WindowManager::getInstance().GetWindowSize().x / 2.f, WindowManager::getInstance().GetWindowSize().y / 2.f));
+
 
 	// register a method to move the shape when the mouse is clicked
 	StateManager::getInstance().getEventManager().AddCallback("Move", &MainMenuState::moveShape, this);
@@ -87,8 +109,10 @@ void MainMenuState::handleInput(EventManager& eventManager)
 			direction = sf::Vector2f(
 				direction.x / std::sqrt(std::pow(direction.x, 2) + std::pow(direction.y, 2)),
 				direction.y / std::sqrt(std::pow(direction.x, 2) + std::pow(direction.y, 2)));
-			// apply acceleration in the direction of the mouse 
-			this->m_acceleration = direction * 980.f;
+			// apply acceleration in the direction of the mouse up to a maximum speed and acceleration
+			this->m_acceleration = sf::Vector2f(
+				std::min(direction.x * 100.f, 980.f),
+				std::min(direction.y * 100.f, 980.f));
 		}
 		else
 		{
@@ -127,12 +151,13 @@ void MainMenuState::update(const sf::Time deltaTime) {
 		this->m_currentPositionText.setString("Current position: " + std::to_string(static_cast<int>(this->m_currentPosition.x)) + ", " + std::to_string(static_cast<int>(this->m_currentPosition.y)));
 
 		// apply friction to velocity to slow down the shape over time
-		this->m_velocity *= 0.95f;
+		this->m_velocity *= 0.99f;
 
 		// keep the shape and tip pointing towards the mouse position on screen
-
-		// get the current mouse position on the screen
+		// get the current mouse position on the view
 		sf::Vector2i mousePosition = sf::Mouse::getPosition(WindowManager::getInstance().getWindow());
+		// convert mouse position to world coordinates
+		mousePosition = static_cast<sf::Vector2i>(WindowManager::getInstance().getWindow().mapPixelToCoords(mousePosition, this->m_view));
 
 		// calculate the angle between the shape and the target position
 		float angle = atan2(mousePosition.y - this->m_shape.getPosition().y, mousePosition.x - this->m_shape.getPosition().x);
@@ -186,6 +211,34 @@ void MainMenuState::update(const sf::Time deltaTime) {
 			this->m_currentPosition = this->m_shape.getPosition();
 		}
 
+		// stop completely when velocity magnitude is less than 0.1
+		if (sqrt(pow(this->m_velocity.x, 2) + pow(this->m_velocity.y, 2)) < 0.1f)
+		{
+			this->m_velocity = sf::Vector2f(0.f, 0.f);
+			this->m_acceleration = sf::Vector2f(0.f, 0.f);
+		}
+
+
+		// keep view centered on the shape, track it until it's within 100 pixels of the edge of the screen
+		if (this->m_shape.getPosition().x > this->m_view.getCenter().x + 100)
+		{
+					this->m_view.setCenter(this->m_shape.getPosition().x - 100, this->m_view.getCenter().y);
+				}
+		else if (this->m_shape.getPosition().x < this->m_view.getCenter().x - 100)
+		{
+					this->m_view.setCenter(this->m_shape.getPosition().x + 100, this->m_view.getCenter().y);
+				}
+		if (this->m_shape.getPosition().y > this->m_view.getCenter().y + 100)
+			{
+							this->m_view.setCenter(this->m_view.getCenter().x, this->m_shape.getPosition().y - 100);
+						}
+		else if (this->m_shape.getPosition().y < this->m_view.getCenter().y - 100)
+		{
+							this->m_view.setCenter(this->m_view.getCenter().x, this->m_shape.getPosition().y + 100);
+						}
+
+
+
 
 		// log the shape's position with LOG macro every one second
 		static long long logTime = 0;
@@ -203,11 +256,15 @@ void MainMenuState::update(const sf::Time deltaTime) {
 void MainMenuState::render(sf::RenderWindow& renderWindow)
 {
 	static const auto color = sf::Color{ 10, 10, 10 };
+	renderWindow.setVerticalSyncEnabled(true);
+	renderWindow.setView(this->m_view);
 	renderWindow.clear(color);
 	renderWindow.draw(this->m_shape);
 	renderWindow.draw(this->m_tip);
 	renderWindow.draw(this->m_boundingCircle);
 	renderWindow.draw(this->m_currentPositionText);
+	renderWindow.draw(this->m_rect);
+	renderWindow.draw(this->m_rect_full);
 	renderWindow.display();
 }
 

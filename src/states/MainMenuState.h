@@ -18,10 +18,20 @@ private:
 	sf::Text m_currentPositionText;
 	// font for the text
 	sf::Font m_font;
+	
+	// view
+	sf::View m_view;
+
+	// rectangular shape for collision detection
+	sf::RectangleShape m_rect;
+	sf::RectangleShape m_rect_full;
+
 
 	sf::Vector2f m_targetPosition = sf::Vector2f(0.f, 0.f);
 	sf::Vector2f m_velocity = sf::Vector2f(0.f, 0.f);
 	sf::Vector2f m_acceleration = sf::Vector2f(0.f, 0.f);
+	sf::Vector2f m_max_velocity = sf::Vector2f(100.f, 100.f);
+	sf::Vector2f m_max_acceleration = sf::Vector2f(1000.f, 1000.f);
 
 public:
 	void start() override;
