@@ -111,8 +111,8 @@ void MainMenuState::handleInput(EventManager& eventManager)
 				direction.y / std::sqrt(std::pow(direction.x, 2) + std::pow(direction.y, 2)));
 			// apply acceleration in the direction of the mouse up to a maximum speed and acceleration
 			this->m_acceleration = sf::Vector2f(
-				std::min(direction.x * 100.f, 980.f),
-				std::min(direction.y * 100.f, 980.f));
+				std::min(direction.x * 100.f, this->m_max_acceleration),
+				std::min(direction.y * 100.f, this->m_max_acceleration));
 		}
 		else
 		{
@@ -135,8 +135,30 @@ void MainMenuState::update(const sf::Time deltaTime) {
 				deltaTimeSum = 0;
 		}
 
-		// apply acceleration to velocity
-		this->m_velocity += this->m_acceleration * deltaTime.asSeconds();
+		// update m_rect and m_rect full sizes and origins if the window size changes
+		if (this->m_rect.getSize() != sf::Vector2f(WindowManager::getInstance().GetWindowSize().x / 2.f, WindowManager::getInstance().GetWindowSize().y / 2.f)) {
+			this->m_rect.setSize(sf::Vector2f(WindowManager::getInstance().GetWindowSize().x / 2.f, WindowManager::getInstance().GetWindowSize().y / 2.f));
+			this->m_rect.setOrigin(this->m_rect.getSize().x / 2.f, this->m_rect.getSize().y / 2.f);
+			// set position to center of the screen
+			this->m_rect.setPosition(sf::Vector2f(WindowManager::getInstance().GetWindowSize().x / 2.f, WindowManager::getInstance().GetWindowSize().y / 2.f));
+		}
+		if (this->m_rect_full.getSize() != sf::Vector2f(WindowManager::getInstance().GetWindowSize().x, WindowManager::getInstance().GetWindowSize().y)) {
+			this->m_rect_full.setSize(sf::Vector2f(WindowManager::getInstance().GetWindowSize().x, WindowManager::getInstance().GetWindowSize().y));
+			this->m_rect_full.setOrigin(this->m_rect_full.getSize().x / 2.f, this->m_rect_full.getSize().y / 2.f);
+			// set position to center of the screen
+			this->m_rect_full.setPosition(sf::Vector2f(WindowManager::getInstance().GetWindowSize().x / 2.f, WindowManager::getInstance().GetWindowSize().y / 2.f));
+
+		}
+
+		// apply acceleration to velocity up to max_velocity
+		this->m_velocity = sf::Vector2f(
+					std::min(this->m_velocity.x + this->m_acceleration.x * deltaTime.asSeconds(), this->m_max_velocity),
+						std::min(this->m_velocity.y + this->m_acceleration.y * deltaTime.asSeconds(), this->m_max_velocity));
+		// also apply limit if velocity is negative
+		this->m_velocity = sf::Vector2f(
+							std::max(this->m_velocity.x, -this->m_max_velocity),
+									std::max(this->m_velocity.y, -this->m_max_velocity));
+		
 		// apply velocity to position
 		this->m_currentPosition += this->m_velocity * deltaTime.asSeconds();
 		// set shape position
@@ -151,7 +173,7 @@ void MainMenuState::update(const sf::Time deltaTime) {
 		this->m_currentPositionText.setString("Current position: " + std::to_string(static_cast<int>(this->m_currentPosition.x)) + ", " + std::to_string(static_cast<int>(this->m_currentPosition.y)));
 
 		// apply friction to velocity to slow down the shape over time
-		this->m_velocity *= 0.99f;
+		//this->m_velocity *= 0.95f;
 
 		// keep the shape and tip pointing towards the mouse position on screen
 		// get the current mouse position on the view
@@ -222,25 +244,44 @@ void MainMenuState::update(const sf::Time deltaTime) {
 		// keep view centered on the shape, track it until it's within 100 pixels of the edge of the screen
 		if (this->m_shape.getPosition().x > this->m_view.getCenter().x + 100)
 		{
-					this->m_view.setCenter(this->m_shape.getPosition().x - 100, this->m_view.getCenter().y);
-				}
+			this->m_view.setCenter(this->m_shape.getPosition().x - 100, this->m_view.getCenter().y);
+		}
 		else if (this->m_shape.getPosition().x < this->m_view.getCenter().x - 100)
 		{
-					this->m_view.setCenter(this->m_shape.getPosition().x + 100, this->m_view.getCenter().y);
-				}
+			this->m_view.setCenter(this->m_shape.getPosition().x + 100, this->m_view.getCenter().y);
+		}
 		if (this->m_shape.getPosition().y > this->m_view.getCenter().y + 100)
-			{
-							this->m_view.setCenter(this->m_view.getCenter().x, this->m_shape.getPosition().y - 100);
-						}
+		{
+			this->m_view.setCenter(this->m_view.getCenter().x, this->m_shape.getPosition().y - 100);
+		}
 		else if (this->m_shape.getPosition().y < this->m_view.getCenter().y - 100)
 		{
-							this->m_view.setCenter(this->m_view.getCenter().x, this->m_shape.getPosition().y + 100);
-						}
+			this->m_view.setCenter(this->m_view.getCenter().x, this->m_shape.getPosition().y + 100);
+		}
+		// stop tracking if the border of the view reaches the edge of the screen
+		if (this->m_view.getCenter().x - this->m_view.getSize().x / 2 < 0)
+		{
+			this->m_view.setCenter(this->m_view.getSize().x / 2, this->m_view.getCenter().y);
+		}
+		else if (this->m_view.getCenter().x + this->m_view.getSize().x / 2 > WindowManager::getInstance().GetWindowSize().x)
+		{
+			this->m_view.setCenter(WindowManager::getInstance().GetWindowSize().x - this->m_view.getSize().x / 2, this->m_view.getCenter().y);
+		}
+		if (this->m_view.getCenter().y - this->m_view.getSize().y / 2 < 0)
+		{
+			this->m_view.setCenter(this->m_view.getCenter().x, this->m_view.getSize().y / 2);
+		}
+		else if (this->m_view.getCenter().y + this->m_view.getSize().y / 2 > WindowManager::getInstance().GetWindowSize().y)
+		{
+			this->m_view.setCenter(this->m_view.getCenter().x, WindowManager::getInstance().GetWindowSize().y - this->m_view.getSize().y / 2);
+		}
+
 
 
 
 
 		// log the shape's position with LOG macro every one second
+#ifdef DEBUG
 		static long long logTime = 0;
 		logTime += deltaTime.asMicroseconds();
 		if (logTime >= 1000000)
@@ -250,6 +291,7 @@ void MainMenuState::update(const sf::Time deltaTime) {
 				LOG("Shape acceleration: " << this->m_acceleration.x << ", " << this->m_acceleration.y)
 				logTime = 0;
 		}
+#endif
 
 	}
 }
@@ -261,8 +303,13 @@ void MainMenuState::render(sf::RenderWindow& renderWindow)
 	renderWindow.clear(color);
 	renderWindow.draw(this->m_shape);
 	renderWindow.draw(this->m_tip);
+
+	// only render on debug mode
+#ifdef DEBUG
 	renderWindow.draw(this->m_boundingCircle);
 	renderWindow.draw(this->m_currentPositionText);
+#endif
+
 	renderWindow.draw(this->m_rect);
 	renderWindow.draw(this->m_rect_full);
 	renderWindow.display();

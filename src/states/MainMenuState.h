@@ -26,12 +26,12 @@ private:
 	sf::RectangleShape m_rect;
 	sf::RectangleShape m_rect_full;
 
-
 	sf::Vector2f m_targetPosition = sf::Vector2f(0.f, 0.f);
 	sf::Vector2f m_velocity = sf::Vector2f(0.f, 0.f);
-	sf::Vector2f m_acceleration = sf::Vector2f(0.f, 0.f);
-	sf::Vector2f m_max_velocity = sf::Vector2f(100.f, 100.f);
-	sf::Vector2f m_max_acceleration = sf::Vector2f(1000.f, 1000.f);
+	float m_max_velocity = 100.f;
+	sf::Vector2f m_acceleration = sf::Vector2f(9.8f, 9.8f);
+	float m_max_acceleration = 980.f;
+	
 
 public:
 	void start() override;
