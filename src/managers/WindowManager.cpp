@@ -5,70 +5,110 @@
 #include "WindowManager.h"
 #include "StateManager.h"
 
-WindowManager& WindowManager::getInstance() {
-    static WindowManager instance;
-    return instance;
-}
-
-sf::RenderWindow& WindowManager::getWindow() const {
-    return this->m_window;
-}
-
-sf::RenderWindow* WindowManager::Create()
+WindowManager::WindowManager()
 {
-    auto style = this->m_isFullscreen ? sf::Style::Fullscreen : sf::Style::Default;
-    static sf::RenderWindow window;
-    if (style == sf::Style::Fullscreen) {
-        window.create(sf::VideoMode::getDesktopMode(), "SFML Game", style);
-        this->m_current_width = Globals::SCREEN_WIDTH;
-        this->m_current_height = Globals::SCREEN_HEIGHT;
-    }
-    else {
-        window.create(sf::VideoMode(Globals::SCREEN_WIDTH_WINDOWED, Globals::SCREEN_HEIGHT_WINDOWED, 32), "SFML Game", style);
-        this->m_current_width = Globals::SCREEN_WIDTH_WINDOWED;
-        this->m_current_height = Globals::SCREEN_HEIGHT_WINDOWED;
-    }
-    window.setActive(true);
-
-    return &window;
+	Setup("Window", sf::Vector2u(640, 480));
 }
 
-WindowManager::WindowManager() : m_window(*Create()) {}
+WindowManager::WindowManager(const std::string& l_title, const sf::Vector2u& l_size)
+{
+	Setup(l_title, l_size);
+}
+
+WindowManager::~WindowManager()
+{
+	Destroy();
+}
+
+void WindowManager::Setup(const std::string& l_title, const sf::Vector2u& l_size)
+{
+	m_windowTitle = l_title;
+	m_windowSize = l_size;
+	m_isFullscreen = false;
+	m_isDone = false;
+	m_isFocused = true;
+	m_eventManager.AddCallback(StateType(0), "Fullscreen_toggle", &WindowManager::ToggleFullscreen, this);
+	m_eventManager.AddCallback(StateType(0), "Window_close", &WindowManager::Close, this);
+	Create();
+}
+
+void WindowManager::Create()
+{
+	auto style = (m_isFullscreen ? sf::Style::Fullscreen : sf::Style::Default);
+	m_window.create({ m_windowSize.x, m_windowSize.y, 32 }, m_windowTitle, style);
+	m_window.setFramerateLimit(Globals::MAX_FRAME_RATE);
+}
+
+void WindowManager::Destroy()
+{
+	m_window.close();
+}
+
+void WindowManager::Update()
+{
+	sf::Event event;
+	while (m_window.pollEvent(event)) {
+		if (event.type == sf::Event::LostFocus) {
+			m_isFocused = false;
+			m_eventManager.SetFocus(false);
+		}
+		else if (event.type == sf::Event::GainedFocus) {
+			m_isFocused = true;
+			m_eventManager.SetFocus(true);
+		}
+		m_eventManager.HandleEvent(event);
+	}
+	m_eventManager.Update();
+}
 
 void WindowManager::ToggleFullscreen(EventDetails* l_details)
 {
-    this->m_isFullscreen = !this->m_isFullscreen;
-    this->m_window.close();
-    auto style = this->m_isFullscreen ? sf::Style::Fullscreen : sf::Style::Default;
-    if (style == sf::Style::Fullscreen) {
-        // check if there are any fullscreen modes available
-        if (sf::VideoMode::getFullscreenModes().empty()) {
-            // if not, switch to windowed mode
-            this->m_isFullscreen = false;
-            style = sf::Style::Default;
-            LOG("No fullscreen modes available, switching to windowed mode");
-            this->m_window.create(sf::VideoMode(Globals::SCREEN_WIDTH_WINDOWED, Globals::SCREEN_HEIGHT_WINDOWED, 32), "SFML Game", style);
-        }
-        else {
-            this->m_window.create(sf::VideoMode::getDesktopMode(), "SFML Game", style);
-            this->m_current_width = Globals::SCREEN_WIDTH;
-            this->m_current_height = Globals::SCREEN_HEIGHT;
-        }
-    }
-    else {
-        this->m_window.create(sf::VideoMode(Globals::SCREEN_WIDTH_WINDOWED, Globals::SCREEN_HEIGHT_WINDOWED, 32), "SFML Game", style);
-        this->m_current_width = Globals::SCREEN_WIDTH_WINDOWED;
-        this->m_current_height = Globals::SCREEN_HEIGHT_WINDOWED;
-    }
-    this->m_window.setActive(true);
+	m_isFullscreen = !m_isFullscreen;
+	Destroy();
+	Create();
 }
 
-sf::Vector2<unsigned int> WindowManager::GetWindowSize() const
+void WindowManager::Close(EventDetails* l_details)
 {
-    return sf::Vector2<unsigned int>(this->m_current_width, this->m_current_height);
+	m_isDone = true;
 }
 
-void WindowManager::Close(EventDetails* l_details) {
-    StateManager::getInstance().stop();
-    this->m_window.close();
+void WindowManager::BeginDraw()
+{
+	m_window.clear(sf::Color::Black);
+}
+
+void WindowManager::EndDraw()
+{
+	m_window.display();
+}
+
+bool WindowManager::IsDone()
+{
+	return m_isDone;
+}
+
+bool WindowManager::IsFullscreen()
+{
+	return m_isFullscreen;
+}
+
+sf::Vector2u WindowManager::GetWindowSize()
+{
+	return m_windowSize;
+}
+
+void WindowManager::Draw(sf::Drawable& l_drawable)
+{
+	m_window.draw(l_drawable);
+}
+
+EventManager* WindowManager::GetEventManager()
+{
+	return &m_eventManager;
+}
+
+bool WindowManager::IsFocused()
+{
+	return m_isFocused;
 }

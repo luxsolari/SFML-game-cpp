@@ -4,54 +4,38 @@
 
 #ifndef CMAKESFMLPROJECT_STATE_H
 #define CMAKESFMLPROJECT_STATE_H
-#include <utility>
-#include <iostream>
-#include <SFML/Window.hpp>
-#include <SFML/Graphics.hpp>
-#include "WindowManager.h"
-#include "InputManager.h"
-#include "EventManager.h"
 
 class State {
-private:
-    bool m_isRunning = false;
+    // make the StateManager a friend class so it can access the private members
+    friend class StateManager;
+    State(StateManager * l_stateManager) 
+        : l_stateManager(l_stateManager), m_transparent(false), m_transcendent(false) {}
+    virtual ~State() {}
+
+    virtual void OnCreate() = 0;
+    virtual void OnDestroy() = 0;
+
+    virtual void Activate() = 0;
+    virtual void Deactivate() = 0;
+
+    virtual void Update(const sf::Time& l_time) = 0;
+    virtual void Draw() = 0;
+
+    void SetTransparent(const bool& l_transparent) { m_transparent = l_transparent; }
+    bool IsTransparent() const { return m_transparent; }
+
+    void SetTranscendent(const bool& l_transcendent) { m_transcendent = l_transcendent; }
+    bool IsTranscendent() const { return m_transcendent; }
+
+    StateManager* GetStateManager() { return l_stateManager; }
+
 public:
-    State() = default;
-    virtual ~State() = default;
 
-    // Copy constructor
-    State(const State& other) = delete;
-    State(State&& other) noexcept : m_isRunning(std::exchange(other.m_isRunning, false)) {}
-
-    // Copy assignment operator
-    State& operator=(const State& other) {
-        if (this != &other) {
-            m_isRunning = other.m_isRunning;
-        }
-        return *this;
-    }
-
-    // Move assignment operator 
-    State& operator=(State&& other) noexcept {
-        if (this != &other) {
-            m_isRunning = std::exchange(other.m_isRunning, false);
-        }
-        return *this;
-    }
+protected:
+    StateManager* l_stateManager;
+    bool m_transparent;  // if true, the state below this one will still be rendered
+    bool m_transcendent; // if true, the state below this one will not be updated
     
-    virtual void start()  = 0;
-    virtual void handleInput(InputManager& inputManager) = 0;
-    virtual void handleInput(EventManager& eventManager) = 0;
-    virtual void update(sf::Time deltaTime) = 0;
-    virtual void render(sf::RenderWindow& renderWindow) = 0;
-    virtual void stop()   = 0;
-
-    [[nodiscard]] bool isRunning() const {
-        return this->m_isRunning;
-    }
-    void setIsRunning(const bool running) {
-        this->m_isRunning = running;
-    }
 };
 
 #endif //CMAKESFMLPROJECT_STATE_H

@@ -10,22 +10,42 @@
 #include "EventManager.h"
 
 class WindowManager {
-private:
-    sf::RenderWindow& m_window;
-    bool m_isFullscreen = false;
-    unsigned int m_current_width;
-    unsigned int m_current_height;
 public:
-    static WindowManager& getInstance();
-    WindowManager (const WindowManager&) = delete;
-    void operator=(const WindowManager&) = delete;
-    sf::RenderWindow& getWindow() const;
-    sf::RenderWindow* Create();
-    void Close(EventDetails* l_details);
-    void ToggleFullscreen(EventDetails* l_details);
-    sf::Vector2<unsigned int> GetWindowSize() const; 
+	WindowManager();
+	WindowManager(const std::string& l_title, const sf::Vector2u& l_size);
+	~WindowManager();
+
+	void BeginDraw();
+	void EndDraw();
+
+	void Update();
+
+	bool IsDone();
+	bool IsFullscreen();
+	sf::Vector2u GetWindowSize();
+
+	void ToggleFullscreen(EventDetails* l_details);
+	void Close(EventDetails* l_details = nullptr);
+	
+	void Draw (sf::Drawable& l_drawable);
+
+	EventManager* GetEventManager();
+	bool IsFocused();
+
 private:
-    explicit WindowManager();
+	void Setup(const std::string& l_title, const sf::Vector2u& l_size);
+	void Destroy();
+	void Create();
+
+	sf::RenderWindow m_window;
+	sf::Vector2u m_windowSize;
+	std::string m_windowTitle;
+	bool m_isDone;
+	bool m_isFullscreen;
+
+	EventManager m_eventManager;
+	bool m_isFocused;
+
 };
 
 

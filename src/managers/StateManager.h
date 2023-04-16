@@ -6,41 +6,52 @@
 #define CMAKESFMLPROJECT_STATEMANAGER_H
 #include <vector>
 #include <memory>
-#include "InputManager.h"
+#include <unordered_map>
 #include "WindowManager.h"
 #include "EventManager.h"
 #include "Globals.h"
-#include "MainMenuState.h"
 #include "State.h"
+#include "StateType.h"
+
+struct SharedContext {
+	SharedContext() : m_windowManager(nullptr), m_eventManager(nullptr) {}
+	WindowManager* m_windowManager;
+	EventManager* m_eventManager;
+};
+
+using StateContainer = std::vector<std::pair<StateType, State*>>;
+using TypeContainer = std::vector<StateType>;
+using StateFactory = std::unordered_map<StateType, std::function<State* (void)>>;
 
 class StateManager
 {
 public:
-	static StateManager& getInstance();
-	StateManager(const StateManager&) = delete;
-	StateManager(const StateManager&&) = delete;
-	void operator=(const StateManager&) = delete;
-	void operator=(const StateManager&&) = delete;
-
-	void start();
-	void update();
-	void stop();
-
-	void pushState(std::unique_ptr<State> state);
-	void popState();
-    void changeState(std::unique_ptr<State> state);
-	State& getCurrentState() const;
-	EventManager& getEventManager();
+	StateManager(SharedContext* l_shared);
+	~StateManager();
+	void Update(const sf::Time& l_time);
+	void Draw();
+	void ProcessRequests();
+	SharedContext* GetContext();
+	bool HasState(const StateType& l_type);
+	void SwitchTo(const StateType& l_type);
+	void Remove(const StateType& l_type);
 
 private:
-	StateManager();
-	~StateManager();
-
-	bool m_isRunning = false;
-	WindowManager& m_windowManager;
-	InputManager& m_inputManager;
-	EventManager m_eventManager;
-	std::vector<std::unique_ptr<State>> m_states;
+	// Methods.
+	void CreateState(const StateType& l_type);
+	void RemoveState(const StateType& l_type);
+	template<class T>
+	void RegisterState(const StateType& l_type) {
+		m_stateFactory[l_type] = [this]() -> State*
+		{
+			return new T(this);
+		};
+	}
+	// Members.
+	SharedContext* m_shared;
+	StateContainer m_states;
+	TypeContainer m_toRemove;
+	StateFactory m_stateFactory;
 };
 
 

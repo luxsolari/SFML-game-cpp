@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17) # enable C++17 standard
 include_directories(${CMAKE_SOURCE_DIR}/src/constants)
 include_directories(${CMAKE_SOURCE_DIR}/src/managers)
 include_directories(${CMAKE_SOURCE_DIR}/src/states)
+include_directories(${CMAKE_SOURCE_DIR}/src/enums)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # Linux-specific code here
@@ -26,7 +27,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
         message(STATUS "SFML_VERSION: ${SFML_VERSION}")
     endif()
 
-    add_executable(CMakeSFMLProject src/main.cpp src/managers/StateManager.cpp src/managers/StateManager.h src/states/State.h src/states/MainMenuState.cpp src/states/MainMenuState.h src/managers/WindowManager.cpp src/managers/WindowManager.h src/constants/Globals.h src/managers/InputManager.cpp src/managers/InputManager.h src/states/OptionsMenuState.cpp src/states/OptionsMenuState.h src/managers/EventManager.h src/managers/EventManager.cpp )
+    add_executable(CMakeSFMLProject src/main.cpp src/managers/StateManager.cpp src/managers/StateManager.h src/states/State.h src/states/MainMenuState.cpp src/states/MainMenuState.h src/managers/WindowManager.cpp src/managers/WindowManager.h src/constants/Globals.h src/managers/InputManager.cpp src/managers/InputManager.h src/states/OptionsMenuState.cpp src/states/OptionsMenuState.h src/managers/EventManager.h src/managers/EventManager.cpp src/enums/StateType.h )
     target_link_libraries (CMakeSFMLProject sfml-graphics sfml-window sfml-system sfml-audio sfml-network)
     target_compile_features(CMakeSFMLProject PRIVATE cxx_std_17)
 
@@ -39,8 +40,9 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         GIT_TAG 2.6.x)
     FetchContent_MakeAvailable(SFML)
 
-    add_executable(CMakeSFMLProject src/main.cpp src/managers/StateManager.cpp src/managers/StateManager.h src/states/State.h src/states/MainMenuState.cpp src/states/MainMenuState.h src/managers/WindowManager.cpp src/managers/WindowManager.h src/constants/Globals.h src/managers/InputManager.cpp src/managers/InputManager.h src/states/OptionsMenuState.cpp src/states/OptionsMenuState.h src/managers/EventManager.h src/managers/EventManager.cpp)
+    add_executable(CMakeSFMLProject src/main.cpp src/managers/StateManager.cpp src/managers/StateManager.h src/states/State.h   src/managers/WindowManager.cpp src/managers/WindowManager.h src/constants/Globals.h     src/managers/EventManager.h src/managers/EventManager.cpp src/enums/StateType.h "src/Game.cpp" "src/Game.h")
     include_directories(${CMAKE_SOURCE_DIR}/src/constants)
+    include_directories(${CMAKE_SOURCE_DIR}/src/enums)
     include_directories(${CMAKE_SOURCE_DIR}/src/managers)
     include_directories(${CMAKE_SOURCE_DIR}/src/states)
 
