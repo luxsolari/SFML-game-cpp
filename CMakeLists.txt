@@ -35,7 +35,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         GIT_TAG 2.6.x)
     FetchContent_MakeAvailable(SFML)
 
-    add_executable(CMakeSFMLProject src/main.cpp src/managers/StateManager.cpp src/managers/StateManager.h src/states/State.h   src/managers/WindowManager.cpp src/managers/WindowManager.h src/constants/Globals.h     src/managers/EventManager.h src/managers/EventManager.cpp src/enums/StateType.h "src/Game.cpp" "src/Game.h")
+    add_executable(CMakeSFMLProject src/main.cpp src/managers/StateManager.cpp src/managers/StateManager.h src/states/State.h   src/managers/WindowManager.cpp src/managers/WindowManager.h src/constants/Globals.h     src/managers/EventManager.h src/managers/EventManager.cpp src/enums/StateType.h "src/Game.cpp" "src/Game.h" "src/states/StateIntro.h" "src/states/StateIntro.cpp")
     include_directories(${CMAKE_SOURCE_DIR}/src/constants)
     include_directories(${CMAKE_SOURCE_DIR}/src/enums)
     include_directories(${CMAKE_SOURCE_DIR}/src/managers)

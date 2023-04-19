@@ -6,7 +6,7 @@ Game::Game() : m_window("CMake SFML Project", sf::Vector2u(Globals::SCREEN_WIDTH
 	m_elapsed = sf::Time::Zero;
 	m_context.m_windowManager = &m_window;
 	m_context.m_eventManager = m_window.GetEventManager();
-	//m_stateManager.SwitchTo(StateType::Intro);
+	m_stateManager.SwitchTo(StateType::Intro);
 }
 
 Game::~Game() {}

@@ -4,10 +4,12 @@
 
 #ifndef CMAKESFMLPROJECT_STATE_H
 #define CMAKESFMLPROJECT_STATE_H
+#include <SFML/Graphics.hpp>
 
 class State {
     // make the StateManager a friend class so it can access the private members
     friend class StateManager;
+public:
     State(StateManager * l_stateManager) 
         : l_stateManager(l_stateManager), m_transparent(false), m_transcendent(false) {}
     virtual ~State() {}
@@ -28,8 +30,6 @@ class State {
     bool IsTranscendent() const { return m_transcendent; }
 
     StateManager* GetStateManager() { return l_stateManager; }
-
-public:
 
 protected:
     StateManager* l_stateManager;

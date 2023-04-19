@@ -75,7 +75,7 @@ void WindowManager::Close(EventDetails* l_details)
 
 void WindowManager::BeginDraw()
 {
-	m_window.clear(sf::Color::Black);
+	m_window.clear(sf::Color(17, 13, 5));
 }
 
 void WindowManager::EndDraw()
@@ -96,6 +96,11 @@ bool WindowManager::IsFullscreen()
 sf::Vector2u WindowManager::GetWindowSize()
 {
 	return m_windowSize;
+}
+
+sf::RenderWindow* WindowManager::GetRenderWindow()
+{
+	return &m_window;
 }
 
 void WindowManager::Draw(sf::Drawable& l_drawable)
